@@ -1,21 +1,28 @@
 const express = require('express');
-const router = express.Router();
 const multer = require('multer');
-const driverController = require('../controllers/driver.controller');
+const DriverController = require('../controllers/driver.controller');
+const authenticateToken = require('../middlewares/auth.middleware');
 
+const router = express.Router();
+
+// Configuração do Multer
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
-    cb(null, 'uploads/');
+    cb(null, 'uploads/drivers/');
   },
   filename: (req, file, cb) => {
-    cb(null, `${Date.now()}-${file.originalname}`);
+    const timestamp = Date.now();
+    const ext = file.originalname.split('.').pop();
+    cb(null, `${timestamp}-${file.fieldname}.${ext}`);
   }
 });
-
 const upload = multer({ storage });
 
-router.post('/register', upload.single('photo'), driverController.register);
-router.post('/login', driverController.login);
-router.get('/', driverController.listAll);
+// Rotas públicas
+router.post('/register', upload.single('photo'), DriverController.register);
+router.post('/login', DriverController.login);
+
+// Rota protegida - só acessa se enviar um token válido
+router.get('/', authenticateToken, DriverController.listAll);
 
 module.exports = router;
